@@ -1,0 +1,22 @@
+# Environment / secrets
+.env
+.env.*
+
+!.env.example
+
+# Go build binary
+/Event-Explorer
+
+# Go dependencies (if vendored later)
+/vendor/
+
+# Test coverage
+coverage.out
+coverage.html
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
