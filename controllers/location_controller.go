@@ -10,14 +10,14 @@ import (
 
 type LocationController struct {
 	beego.Controller
-	locationService *services.LocationService
+	LocationService *services.LocationService
 }
 
 func NewLocationController(
 	locationService *services.LocationService,
 ) *LocationController {
 	return &LocationController{
-		locationService: locationService,
+		LocationService: locationService,
 	}
 }
 
@@ -25,7 +25,7 @@ func (c *LocationController) Autocomplete() {
 	input := c.GetString("input")
 	sessionToken := c.GetString("sessionToken")
 
-	suggestions, err := c.locationService.Autocomplete(
+	suggestions, err := c.LocationService.Autocomplete(
 		c.Ctx.Request.Context(),
 		input,
 		sessionToken,
@@ -46,7 +46,7 @@ func (c *LocationController) GetPlaceDetails() {
 	placeID := c.Ctx.Input.Param(":placeId")
 	sessionToken := c.GetString("sessionToken")
 
-	location, err := c.locationService.GetPlaceDetails(
+	location, err := c.LocationService.GetPlaceDetails(
 		c.Ctx.Request.Context(),
 		placeID,
 		sessionToken,
