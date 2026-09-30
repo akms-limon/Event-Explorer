@@ -5,9 +5,8 @@ import (
 	"os"
 
 	"Event-Explorer/clients"
+	"Event-Explorer/routers"
 	"Event-Explorer/services"
-
-	_ "Event-Explorer/routers"
 
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/joho/godotenv"
@@ -25,9 +24,12 @@ func main() {
 	}
 
 	googlePlacesClient := clients.NewGooglePlacesClient(googleAPIKey)
-	locationService := services.NewLocationService(googlePlacesClient)
 
-	_ = locationService
+	locationService := services.NewLocationService(
+		googlePlacesClient,
+	)
+
+	routers.Register(locationService)
 
 	beego.Run()
 }
