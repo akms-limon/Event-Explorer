@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"Event-Explorer/models"
@@ -31,6 +32,7 @@ type autocompleteRequest struct {
 	Input                string   `json:"input"`
 	IncludedPrimaryTypes []string `json:"includedPrimaryTypes"`
 	SessionToken         string   `json:"sessionToken"`
+	LanguageCode         string   `json:"languageCode"`
 }
 
 type autocompleteResponse struct {
@@ -52,7 +54,6 @@ type placeDetailsResponse struct {
 	} `json:"addressComponents"`
 }
 
-// Autocomplete retrieves location suggestions based on the input string
 func (c *GooglePlacesClient) Autocomplete(
 	ctx context.Context,
 	input string,
@@ -60,8 +61,9 @@ func (c *GooglePlacesClient) Autocomplete(
 ) ([]models.LocationSuggestion, error) {
 	requestBody := autocompleteRequest{
 		Input:                input,
-		IncludedPrimaryTypes: []string{"locality"},
+		IncludedPrimaryTypes: []string{"(cities)"},
 		SessionToken:         sessionToken,
+		LanguageCode:         "en",
 	}
 
 	body, err := json.Marshal(requestBody)
@@ -110,23 +112,26 @@ func (c *GooglePlacesClient) Autocomplete(
 	return suggestions, nil
 }
 
-// GetPlaceDetails retrieves the details of a place using its place ID
 func (c *GooglePlacesClient) GetPlaceDetails(
 	ctx context.Context,
 	placeID string,
 	sessionToken string,
 ) (*models.Location, error) {
-	url := fmt.Sprintf(
-		"%s/v1/places/%s?sessionToken=%s",
+	query := url.Values{}
+	query.Set("sessionToken", sessionToken)
+	query.Set("languageCode", "en")
+
+	requestURL := fmt.Sprintf(
+		"%s/v1/places/%s?%s",
 		googlePlacesBaseURL,
-		placeID,
-		sessionToken,
+		url.PathEscape(placeID),
+		query.Encode(),
 	)
 
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodGet,
-		url,
+		requestURL,
 		nil,
 	)
 	if err != nil {
