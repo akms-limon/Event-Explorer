@@ -368,3 +368,150 @@ h1 em {
     justify-content: center;
   }
 }
+
+
+/* events */
+
+.events-page {
+  padding-bottom: 90px;
+}
+
+.events-hero {
+  padding: 70px 0 55px;
+}
+
+.events-hero h1 {
+  max-width: 760px;
+}
+
+.events-section {
+  padding: 30px 0 70px;
+}
+
+.events-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 26px;
+}
+
+.events-heading .eyebrow {
+  margin-bottom: 10px;
+}
+
+.events-heading h2 {
+  margin: 0;
+  font-size: 30px;
+  letter-spacing: -1.5px;
+}
+
+.event-count {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.event-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.event-card {
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.event-image-wrap {
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: var(--panel-light);
+}
+
+.event-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.event-card-body {
+  padding: 20px;
+}
+
+.event-category {
+  color: var(--mint);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.event-card h3 {
+  margin: 12px 0 14px;
+  font-size: 19px;
+  line-height: 1.25;
+  letter-spacing: -.4px;
+}
+
+.event-meta,
+.event-venue {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.event-venue {
+  margin-top: 4px;
+}
+
+.event-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px;
+  color: var(--mint);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.event-link span {
+  font-size: 14px;
+}
+
+.event-link:hover {
+  opacity: .8;
+}
+
+.empty-events {
+  padding: 30px;
+  background: var(--panel);
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .event-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .events-hero {
+    padding-top: 50px;
+  }
+
+  .events-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .event-grid {
+    grid-template-columns: 1fr;
+  }
+}
