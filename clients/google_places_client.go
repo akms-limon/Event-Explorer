@@ -2,7 +2,6 @@ package clients
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -55,7 +54,6 @@ type placeDetailsResponse struct {
 }
 
 func (c *GooglePlacesClient) Autocomplete(
-	ctx context.Context,
 	input string,
 	sessionToken string,
 ) ([]models.LocationSuggestion, error) {
@@ -71,8 +69,7 @@ func (c *GooglePlacesClient) Autocomplete(
 		return nil, fmt.Errorf("marshal autocomplete request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(
-		ctx,
+	req, err := http.NewRequest(
 		http.MethodPost,
 		googlePlacesBaseURL+"/v1/places:autocomplete",
 		bytes.NewReader(body),
@@ -90,8 +87,12 @@ func (c *GooglePlacesClient) Autocomplete(
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-		return nil, fmt.Errorf("google autocomplete returned status %d", resp.StatusCode)
+	if resp.StatusCode < http.StatusOK ||
+		resp.StatusCode >= http.StatusMultipleChoices {
+		return nil, fmt.Errorf(
+			"google autocomplete returned status %d",
+			resp.StatusCode,
+		)
 	}
 
 	var result autocompleteResponse
@@ -100,20 +101,26 @@ func (c *GooglePlacesClient) Autocomplete(
 		return nil, fmt.Errorf("decode autocomplete response: %w", err)
 	}
 
-	suggestions := make([]models.LocationSuggestion, 0, len(result.Suggestions))
+	suggestions := make(
+		[]models.LocationSuggestion,
+		0,
+		len(result.Suggestions),
+	)
 
 	for _, suggestion := range result.Suggestions {
-		suggestions = append(suggestions, models.LocationSuggestion{
-			PlaceID: suggestion.PlacePrediction.PlaceID,
-			Text:    suggestion.PlacePrediction.Text.Text,
-		})
+		suggestions = append(
+			suggestions,
+			models.LocationSuggestion{
+				PlaceID: suggestion.PlacePrediction.PlaceID,
+				Text:    suggestion.PlacePrediction.Text.Text,
+			},
+		)
 	}
 
 	return suggestions, nil
 }
 
 func (c *GooglePlacesClient) GetPlaceDetails(
-	ctx context.Context,
 	placeID string,
 	sessionToken string,
 ) (*models.Location, error) {
@@ -128,8 +135,7 @@ func (c *GooglePlacesClient) GetPlaceDetails(
 		query.Encode(),
 	)
 
-	req, err := http.NewRequestWithContext(
-		ctx,
+	req, err := http.NewRequest(
 		http.MethodGet,
 		requestURL,
 		nil,
@@ -147,8 +153,12 @@ func (c *GooglePlacesClient) GetPlaceDetails(
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-		return nil, fmt.Errorf("google place details returned status %d", resp.StatusCode)
+	if resp.StatusCode < http.StatusOK ||
+		resp.StatusCode >= http.StatusMultipleChoices {
+		return nil, fmt.Errorf(
+			"google place details returned status %d",
+			resp.StatusCode,
+		)
 	}
 
 	var result placeDetailsResponse
@@ -171,7 +181,9 @@ func (c *GooglePlacesClient) GetPlaceDetails(
 	}
 
 	if location.City == "" || location.CountryCode == "" {
-		return nil, fmt.Errorf("google place details missing city or country code")
+		return nil, fmt.Errorf(
+			"google place details missing city or country code",
+		)
 	}
 
 	return location, nil

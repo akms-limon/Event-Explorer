@@ -1,11 +1,11 @@
 package models
 
 type LocationSuggestion struct {
-	PlaceID string
-	Text    string
+	PlaceID string `json:"placeId"`
+	Text    string `json:"text"`
 }
 
 type Location struct {
-	City        string
-	CountryCode string
+	City        string `json:"city"`
+	CountryCode string `json:"countryCode"`
 }

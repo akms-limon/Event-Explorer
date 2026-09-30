@@ -1,7 +1,6 @@
 package services
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"unicode/utf8"
@@ -23,7 +22,6 @@ func NewLocationService(
 }
 
 func (s *LocationService) Autocomplete(
-	ctx context.Context,
 	input string,
 	sessionToken string,
 ) ([]models.LocationSuggestion, error) {
@@ -46,14 +44,12 @@ func (s *LocationService) Autocomplete(
 	}
 
 	return s.googlePlacesClient.Autocomplete(
-		ctx,
 		input,
 		sessionToken,
 	)
 }
 
 func (s *LocationService) GetPlaceDetails(
-	ctx context.Context,
 	placeID string,
 	sessionToken string,
 ) (*models.Location, error) {
@@ -68,7 +64,6 @@ func (s *LocationService) GetPlaceDetails(
 	}
 
 	return s.googlePlacesClient.GetPlaceDetails(
-		ctx,
 		placeID,
 		sessionToken,
 	)

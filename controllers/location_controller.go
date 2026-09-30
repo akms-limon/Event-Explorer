@@ -26,7 +26,6 @@ func (c *LocationController) Autocomplete() {
 	sessionToken := c.GetString("sessionToken")
 
 	suggestions, err := c.LocationService.Autocomplete(
-		c.Ctx.Request.Context(),
 		input,
 		sessionToken,
 	)
@@ -47,7 +46,6 @@ func (c *LocationController) GetPlaceDetails() {
 	sessionToken := c.GetString("sessionToken")
 
 	location, err := c.LocationService.GetPlaceDetails(
-		c.Ctx.Request.Context(),
 		placeID,
 		sessionToken,
 	)
