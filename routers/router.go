@@ -7,10 +7,22 @@ import (
 	beego "github.com/beego/beego/v2/server/web"
 )
 
-func Register(locationService *services.LocationService) {
-	locationController := controllers.NewLocationController(locationService)
+func Register(
+	locationService *services.LocationService,
+	eventService *services.EventService,
+) {
+	locationController := controllers.NewLocationController(
+		locationService,
+	)
 
-	beego.Router("/", &controllers.MainController{})
+	eventController := controllers.NewEventController(
+		eventService,
+	)
+
+	beego.Router(
+		"/",
+		&controllers.MainController{},
+	)
 
 	beego.Router(
 		"/api/locations/autocomplete",
@@ -22,5 +34,11 @@ func Register(locationService *services.LocationService) {
 		"/api/locations/:placeId",
 		locationController,
 		"get:GetPlaceDetails",
+	)
+
+	beego.Router(
+		"/events",
+		eventController,
+		"get:List",
 	)
 }

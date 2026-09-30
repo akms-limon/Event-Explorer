@@ -18,18 +18,36 @@ func main() {
 	}
 
 	googleAPIKey := os.Getenv("GOOGLE_PLACES_API_KEY")
+	ticketmasterAPIKey := os.Getenv("TICKETMASTER_API_KEY")
 
 	if googleAPIKey == "" {
 		log.Fatal("GOOGLE_PLACES_API_KEY is not configured")
 	}
 
-	googlePlacesClient := clients.NewGooglePlacesClient(googleAPIKey)
+	if ticketmasterAPIKey == "" {
+		log.Fatal("TICKETMASTER_API_KEY is not configured")
+	}
+
+	googlePlacesClient := clients.NewGooglePlacesClient(
+		googleAPIKey,
+	)
+
+	ticketmasterClient := clients.NewTicketmasterClient(
+		ticketmasterAPIKey,
+	)
 
 	locationService := services.NewLocationService(
 		googlePlacesClient,
 	)
 
-	routers.Register(locationService)
+	eventService := services.NewEventService(
+		ticketmasterClient,
+	)
+
+	routers.Register(
+		locationService,
+		eventService,
+	)
 
 	beego.Run()
 }
