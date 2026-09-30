@@ -25,13 +25,17 @@ func (c *EventController) List() {
 	city := c.GetString("city")
 	countryCode := c.GetString("countryCode")
 
-	musicEvents, sportsEvents, err := c.EventService.GetEvents(
-		city,
-		countryCode,
-	)
+	musicEvents, sportsEvents, err :=
+		c.EventService.GetEvents(
+			city,
+			countryCode,
+		)
 
 	if err != nil {
-		c.CustomAbort(http.StatusBadGateway, err.Error())
+		c.CustomAbort(
+			http.StatusBadGateway,
+			err.Error(),
+		)
 		return
 	}
 
