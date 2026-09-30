@@ -28,6 +28,7 @@ type ticketmasterEvent struct {
 	Images []struct {
 		URL string `json:"url"`
 	} `json:"images"`
+
 	Dates struct {
 		Start struct {
 			LocalDate string `json:"localDate"`
@@ -35,35 +36,41 @@ type ticketmasterEvent struct {
 		} `json:"start"`
 		Timezone string `json:"timezone"`
 	} `json:"dates"`
+
 	Embedded *struct {
 		Venues []struct {
 			Name string `json:"name"`
+
 			City struct {
 				Name string `json:"name"`
 			} `json:"city"`
+
 			State struct {
-				Name        string `json:"name"`
-				StateCode   string `json:"stateCode"`
+				Name      string `json:"name"`
+				StateCode string `json:"stateCode"`
 			} `json:"state"`
+
 			Country struct {
 				Name        string `json:"name"`
 				CountryCode string `json:"countryCode"`
 			} `json:"country"`
+
 			Address struct {
 				Line1 string `json:"line1"`
 			} `json:"address"`
 		} `json:"venues"`
 	} `json:"_embedded"`
-	Info      string `json:"info"`
+
+	Info       string `json:"info"`
 	PleaseNote string `json:"pleaseNote"`
-	URL       string `json:"url"`
+	URL        string `json:"url"`
 }
 
 func NewTicketmasterClient(
 	apiKey string,
 ) *TicketmasterClient {
 	return &TicketmasterClient{
-		apiKey: apiKey,
+		apiKey:     apiKey,
 		httpClient: &http.Client{},
 	}
 }
@@ -111,7 +118,10 @@ func (c *TicketmasterClient) GetEvents(
 	events := make([]models.Event, 0, len(data.Embedded.Events))
 
 	for _, event := range data.Embedded.Events {
-		events = append(events, mapTicketmasterEvent(event, category))
+		events = append(
+			events,
+			mapTicketmasterEvent(event, category),
+		)
 	}
 
 	return events, nil
@@ -132,7 +142,7 @@ func mapTicketmasterEvent(
 		Category:    category,
 	}
 
-	if event.PleaseNote != "" && result.Description == "" {
+	if result.Description == "" {
 		result.Description = event.PleaseNote
 	}
 
@@ -140,7 +150,9 @@ func mapTicketmasterEvent(
 		result.ImageURL = event.Images[0].URL
 	}
 
-	if event.Embedded != nil && len(event.Embedded.Venues) > 0 {
+	if event.Embedded != nil &&
+		len(event.Embedded.Venues) > 0 {
+
 		venue := event.Embedded.Venues[0]
 
 		result.Venue = venue.Name
