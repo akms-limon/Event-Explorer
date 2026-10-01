@@ -13,7 +13,7 @@ import (
 
 var ErrTicketmasterEventNotFound = errors.New("ticketmaster event not found")
 
-const ticketmasterBaseURL = "https://app.ticketmaster.com/discovery/v2"
+var ticketmasterBaseURL = "https://app.ticketmaster.com/discovery/v2"
 
 type TicketmasterClient struct {
 	apiKey     string
