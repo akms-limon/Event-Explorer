@@ -2,12 +2,16 @@ package clients
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"Event-Explorer/models"
 )
+
+var ErrTicketmasterEventNotFound = errors.New("ticketmaster event not found")
 
 const ticketmasterBaseURL = "https://app.ticketmaster.com/discovery/v2"
 
@@ -28,6 +32,13 @@ type ticketmasterEvent struct {
 	Images []struct {
 		URL string `json:"url"`
 	} `json:"images"`
+
+	Classifications []struct {
+		Primary bool `json:"primary"`
+		Segment struct {
+			Name string `json:"name"`
+		} `json:"segment"`
+	} `json:"classifications"`
 
 	Dates struct {
 		Start struct {
@@ -70,8 +81,10 @@ func NewTicketmasterClient(
 	apiKey string,
 ) *TicketmasterClient {
 	return &TicketmasterClient{
-		apiKey:     apiKey,
-		httpClient: &http.Client{},
+		apiKey: apiKey,
+		httpClient: &http.Client{
+			Timeout: 10 * time.Second,
+		},
 	}
 }
 
@@ -91,7 +104,10 @@ func (c *TicketmasterClient) GetEvents(
 
 	response, err := c.httpClient.Get(requestURL)
 	if err != nil {
-		return nil, fmt.Errorf("ticketmaster request failed: %w", err)
+		return nil, fmt.Errorf(
+			"ticketmaster request failed: %w",
+			err,
+		)
 	}
 	defer response.Body.Close()
 
@@ -127,6 +143,48 @@ func (c *TicketmasterClient) GetEvents(
 	return events, nil
 }
 
+func (c *TicketmasterClient) GetEvent(
+	eventID string,
+) (models.Event, error) {
+	requestURL := fmt.Sprintf(
+		"%s/events/%s.json?apikey=%s",
+		ticketmasterBaseURL,
+		url.PathEscape(eventID),
+		url.QueryEscape(c.apiKey),
+	)
+
+	response, err := c.httpClient.Get(requestURL)
+	if err != nil {
+		return models.Event{}, fmt.Errorf(
+			"ticketmaster request failed: %w",
+			err,
+		)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode == http.StatusNotFound {
+		return models.Event{}, ErrTicketmasterEventNotFound
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return models.Event{}, fmt.Errorf(
+			"ticketmaster returned status %d",
+			response.StatusCode,
+		)
+	}
+
+	var event ticketmasterEvent
+
+	if err := json.NewDecoder(response.Body).Decode(&event); err != nil {
+		return models.Event{}, fmt.Errorf(
+			"failed to decode ticketmaster response: %w",
+			err,
+		)
+	}
+
+	return mapTicketmasterEvent(event, ""), nil
+}
+
 func mapTicketmasterEvent(
 	event ticketmasterEvent,
 	category string,
@@ -140,6 +198,19 @@ func mapTicketmasterEvent(
 		Description: event.Info,
 		TicketURL:   event.URL,
 		Category:    category,
+	}
+
+	if result.Category == "" {
+		for _, classification := range event.Classifications {
+			if classification.Primary {
+				result.Category = classification.Segment.Name
+				break
+			}
+		}
+
+		if result.Category == "" && len(event.Classifications) > 0 {
+			result.Category = event.Classifications[0].Segment.Name
+		}
 	}
 
 	if result.Description == "" {

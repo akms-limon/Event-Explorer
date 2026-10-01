@@ -55,7 +55,7 @@ async function searchCities() {
     const suggestions = data.suggestions || [];
 
     if (suggestions.length === 0) {
-      showMessage("No sample cities match.");
+      showMessage("No cities found.");
       return;
     }
 
@@ -111,6 +111,7 @@ async function selectSuggestion(suggestion) {
     };
 
     cityInput.value = suggestion.text;
+
     showMessage(
       selectedLocation.city +
         ", " +
@@ -120,8 +121,6 @@ async function selectSuggestion(suggestion) {
 
     exploreButton.disabled = false;
 
-    // The current token belongs to this autocomplete/selection session.
-    // The next search gets a new session token.
     sessionToken = createSessionToken();
   } catch (error) {
     selectedLocation = null;
@@ -133,9 +132,10 @@ async function selectSuggestion(suggestion) {
 cityInput.addEventListener("input", () => {
   clearTimeout(debounceTimer);
 
-  if (selectedLocation) {
-    sessionToken = createSessionToken();
-  }
+  selectedLocation = null;
+  exploreButton.disabled = true;
+
+  sessionToken = createSessionToken();
 
   debounceTimer = setTimeout(searchCities, 300);
 });

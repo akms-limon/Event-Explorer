@@ -1,176 +1,69 @@
 {{ template "partials/header.tpl" . }}
 
-<main class="events-page">
+<main class="listing-page">
+  <div class="container">
 
-  <section class="events-hero container">
-    <p class="eyebrow">EVENTS IN {{ .City }}</p>
+    <section class="listing-header">
+      <a href="/" class="back-link">← Change City</a>
 
-    <h1>
-      Something worth<br>
-      <em>going out for.</em>
-    </h1>
+      <p class="eyebrow">Event Explorer</p>
 
-    <p class="lead">
-      Discover music and sports events happening in {{ .City }}.
-    </p>
-  </section>
+      <h1>
+        Events in {{ .City }}
+      </h1>
 
+      {{ if .CountryCode }}
+        <p class="listing-location">
+          {{ .CountryCode }}
+        </p>
+      {{ end }}
+    </section>
 
-  <section class="events-section container">
-
-    <div class="events-heading">
-      <div>
-        <p class="eyebrow">01 / MUSIC</p>
-        <h2>Live music</h2>
+    <section class="event-section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Music</p>
+          <h2>Music Events</h2>
+        </div>
       </div>
 
       {{ if .MusicEvents }}
-        <span class="event-count">
-          {{ len .MusicEvents }} events
-        </span>
+        <div class="event-grid">
+          {{ range .MusicEvents }}
+            {{ template "partials/event_card.tpl" . }}
+          {{ end }}
+        </div>
+      {{ else }}
+        <div class="empty-state">
+          <h3>No music events found</h3>
+          <p>There are no music events available for this city right now.</p>
+        </div>
       {{ end }}
-    </div>
+    </section>
 
-
-    {{ if .MusicEvents }}
-
-      <div class="event-grid">
-
-        {{ range .MusicEvents }}
-
-          <article class="event-card">
-
-            <div class="event-image-wrap">
-              <img
-                src="{{ .ImageURL }}"
-                alt="{{ .Name }}"
-                class="event-image"
-              >
-            </div>
-
-            <div class="event-card-body">
-
-              <span class="event-category">
-                {{ .Category }}
-              </span>
-
-              <h3>{{ .Name }}</h3>
-
-              <p class="event-meta">
-                {{ .LocalDate }}
-                {{ if .LocalTime }}
-                  · {{ .LocalTime }}
-                {{ end }}
-              </p>
-
-              <p class="event-venue">
-                {{ .Venue }}
-              </p>
-
-              <a
-                href="/events/{{ .ID }}"
-                class="event-link"
-              >
-                View Details
-                <span>↗</span>
-              </a>
-
-            </div>
-
-          </article>
-
-        {{ end }}
-
-      </div>
-
-    {{ else }}
-
-      <div class="empty-events">
-        <p>No music events found in {{ .City }}.</p>
-      </div>
-
-    {{ end }}
-
-  </section>
-
-
-  <section class="events-section container">
-
-    <div class="events-heading">
-      <div>
-        <p class="eyebrow">02 / SPORTS</p>
-        <h2>Sports &amp; matchdays</h2>
+    <section class="event-section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Sports</p>
+          <h2>Sports Events</h2>
+        </div>
       </div>
 
       {{ if .SportsEvents }}
-        <span class="event-count">
-          {{ len .SportsEvents }} events
-        </span>
+        <div class="event-grid">
+          {{ range .SportsEvents }}
+            {{ template "partials/event_card.tpl" . }}
+          {{ end }}
+        </div>
+      {{ else }}
+        <div class="empty-state">
+          <h3>No sports events found</h3>
+          <p>There are no sports events available for this city right now.</p>
+        </div>
       {{ end }}
-    </div>
+    </section>
 
-
-    {{ if .SportsEvents }}
-
-      <div class="event-grid">
-
-        {{ range .SportsEvents }}
-
-          <article class="event-card">
-
-            <div class="event-image-wrap">
-              <img
-                src="{{ .ImageURL }}"
-                alt="{{ .Name }}"
-                class="event-image"
-              >
-            </div>
-
-            <div class="event-card-body">
-
-              <span class="event-category">
-                {{ .Category }}
-              </span>
-
-              <h3>{{ .Name }}</h3>
-
-              <p class="event-meta">
-                {{ .LocalDate }}
-                {{ if .LocalTime }}
-                  · {{ .LocalTime }}
-                {{ end }}
-              </p>
-
-              <p class="event-venue">
-                {{ .Venue }}
-              </p>
-
-              <a
-                href="/events/{{ .ID }}"
-                class="event-link"
-              >
-                View Details
-                <span>↗</span>
-              </a>
-
-            </div>
-
-          </article>
-
-        {{ end }}
-
-      </div>
-
-    {{ else }}
-
-      <div class="empty-events">
-        <p>No sports events found in {{ .City }}.</p>
-      </div>
-
-    {{ end }}
-
-  </section>
-
+  </div>
 </main>
 
 {{ template "partials/footer.tpl" . }}

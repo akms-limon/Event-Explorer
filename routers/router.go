@@ -41,4 +41,16 @@ func Register(
 		eventController,
 		"get:List",
 	)
+
+	beego.Router(
+		"/events/:eventId",
+		eventController,
+		"get:Details",
+	)
+
+	beego.Router(
+		"/redirect/:eventId",
+		eventController,
+		"get:Redirect",
+	)
 }

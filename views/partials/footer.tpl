@@ -5,6 +5,5 @@
   </div>
 </footer>
 
-<script src="/static/js/home.js"></script>
 </body>
 </html>
