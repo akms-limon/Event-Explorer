@@ -24,6 +24,7 @@ func NewLocationService(
 	}
 }
 
+// Autocomplete retrieves location suggestions based on the provided input and session token.
 func (s *LocationService) Autocomplete(
 	input string,
 	sessionToken string,
@@ -58,6 +59,7 @@ func (s *LocationService) Autocomplete(
 	)
 }
 
+// GetPlaceDetails retrieves the details of a place based on the provided place ID and session token.
 func (s *LocationService) GetPlaceDetails(
 	placeID string,
 	sessionToken string,

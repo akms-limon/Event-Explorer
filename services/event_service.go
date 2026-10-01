@@ -11,6 +11,8 @@ import (
 	"Event-Explorer/models"
 )
 
+
+// Error variables for event service
 var (
 	ErrInvalidEventID          = errors.New("invalid event ID")
 	ErrEventNotFound           = errors.New("event not found")
@@ -43,12 +45,14 @@ type eventResult struct {
 	err       error
 }
 
+// CacheLocation represents a cached location with city, country code, and category.
 type CacheLocation struct {
 	City        string `json:"city"`
 	CountryCode string `json:"countryCode"`
 	Category    string `json:"category"`
 }
 
+// NewEventService creates a new instance of EventService with the provided TicketmasterClient.
 func NewEventService(
 	ticketmasterClient TicketmasterClient,
 ) *EventService {
@@ -58,6 +62,7 @@ func NewEventService(
 	}
 }
 
+// GetEvents retrieves events based on the provided city and country code.
 func (s *EventService) GetEvents(
 	city string,
 	countryCode string,
@@ -164,6 +169,7 @@ func (s *EventService) GetEvents(
 	return musicEvents, sportsEvents, musicCacheHit, sportsCacheHit, nil
 }
 
+// getCategoryEvents retrieves events for a specific category (Music or Sports) based on the provided city and country code.
 func (s *EventService) getCategoryEvents(
 	city string,
 	countryCode string,
@@ -207,6 +213,7 @@ func (s *EventService) getCategoryEvents(
 	return events, false, nil
 }
 
+// GetEvent retrieves a specific event based on the provided event ID.
 func (s *EventService) GetEvent(
 	eventID string,
 ) (models.Event, error) {
@@ -230,6 +237,7 @@ func (s *EventService) GetEvent(
 	return event, nil
 }
 
+// GetTicketURL retrieves the ticket URL for a specific event based on the provided event ID.
 func (s *EventService) GetTicketURL(
 	eventID string,
 ) (string, error) {
@@ -259,6 +267,7 @@ func (s *EventService) GetTicketURL(
 	return parsedURL.String(), nil
 }
 
+// GetCachedLocations retrieves cached locations based on a search query.
 func (s *EventService) GetCachedLocations(
 	search string,
 ) []CacheLocation {
@@ -311,6 +320,7 @@ func (s *EventService) GetCachedLocations(
 	return locations
 }
 
+// InvalidateCache clears all cached events in the EventService.
 func (s *EventService) InvalidateCache() {
 	s.cacheMutex.Lock()
 	defer s.cacheMutex.Unlock()
@@ -318,6 +328,7 @@ func (s *EventService) InvalidateCache() {
 	s.cache = make(map[string][]models.Event)
 }
 
+// InvalidateCacheByLocation clears cached events for a specific city, country code, and category in the EventService.
 func (s *EventService) InvalidateCacheByLocation(
 	city string,
 	countryCode string,
@@ -331,6 +342,7 @@ func (s *EventService) InvalidateCacheByLocation(
 	delete(s.cache, key)
 }
 
+// cacheKey generates a cache key based on the provided city, country code, and category.
 func cacheKey(
 	city string,
 	countryCode string,
@@ -345,6 +357,7 @@ func cacheKey(
 	)
 }
 
+// isValidCountryCode checks if the provided value is a valid 2-letter country code.
 func isValidCountryCode(value string) bool {
 	if len(value) != 2 {
 		return false
@@ -354,6 +367,7 @@ func isValidCountryCode(value string) bool {
 		value[1] >= 'A' && value[1] <= 'Z'
 }
 
+// NewEventServiceWithClient creates a new instance of EventService with the provided TicketmasterClient.
 func NewEventServiceWithClient(
 	ticketmasterClient TicketmasterClient,
 ) *EventService {

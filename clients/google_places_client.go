@@ -56,6 +56,7 @@ type placeDetailsResponse struct {
 	} `json:"addressComponents"`
 }
 
+// Autocomplete retrieves location suggestions based on the provided input and session token.
 func (c *GooglePlacesClient) Autocomplete(
 	input string,
 	sessionToken string,
@@ -135,6 +136,7 @@ func (c *GooglePlacesClient) Autocomplete(
 	return suggestions, nil
 }
 
+// GetPlaceDetails retrieves the details of a place based on the provided place ID and session token.
 func (c *GooglePlacesClient) GetPlaceDetails(
 	placeID string,
 	sessionToken string,

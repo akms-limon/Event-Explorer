@@ -10,11 +10,13 @@ import (
 	beego "github.com/beego/beego/v2/server/web"
 )
 
+// EventController handles HTTP requests related to events.
 type EventController struct {
 	beego.Controller
 	EventService *services.EventService
 }
 
+// NewEventController creates a new instance of EventController with the provided EventService.
 func NewEventController(
 	eventService *services.EventService,
 ) *EventController {
@@ -23,6 +25,8 @@ func NewEventController(
 	}
 }
 
+
+// List handles the GET request for listing events based on city and country code.
 func (c *EventController) List() {
 	city := c.GetString("city")
 	countryCode := c.GetString("countryCode")
@@ -67,6 +71,7 @@ func (c *EventController) List() {
 	c.TplName = "listing.tpl"
 }
 
+// Details handles the GET request for retrieving event details by event ID.
 func (c *EventController) Details() {
 	eventID := c.Ctx.Input.Param(":eventId")
 
@@ -106,6 +111,7 @@ func (c *EventController) Details() {
 	c.TplName = "details.tpl"
 }
 
+// Redirect handles the GET request for redirecting to the ticket URL of an event by event ID.
 func (c *EventController) Redirect() {
 	eventID := c.Ctx.Input.Param(":eventId")
 
@@ -169,6 +175,7 @@ func (c *EventController) Redirect() {
 	)
 }
 
+// SearchCachedCities handles the GET request for searching cached cities based on a search query.
 func (c *EventController) SearchCachedCities() {
 	search := strings.TrimSpace(
 		c.GetString("search"),
@@ -192,6 +199,7 @@ func (c *EventController) SearchCachedCities() {
 	c.ServeJSON()
 }
 
+// InvalidateCache handles the GET request for invalidating all cached events.
 func (c *EventController) InvalidateCache() {
 	c.EventService.InvalidateCache()
 
@@ -202,6 +210,7 @@ func (c *EventController) InvalidateCache() {
 	c.ServeJSON()
 }
 
+// InvalidateCacheByLocation handles the GET request for invalidating cached events by city, country code, and category.
 func (c *EventController) InvalidateCacheByLocation() {
 	city := c.Ctx.Input.Param(":city")
 	countryCode := c.Ctx.Input.Param(":country")

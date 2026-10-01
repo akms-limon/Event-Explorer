@@ -23,6 +23,8 @@ func NewLocationController(
 	}
 }
 
+
+// Autocomplete handles the GET request for location autocomplete suggestions.
 func (c *LocationController) Autocomplete() {
 	input := c.GetString("input")
 	sessionToken := c.GetString("sessionToken")
@@ -47,6 +49,8 @@ func (c *LocationController) Autocomplete() {
 	c.ServeJSON()
 }
 
+
+// GetPlaceDetails handles the GET request for retrieving place details by place ID.
 func (c *LocationController) GetPlaceDetails() {
 	placeID := c.Ctx.Input.Param(":placeId")
 	sessionToken := c.GetString("sessionToken")

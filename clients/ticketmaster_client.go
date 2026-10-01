@@ -88,6 +88,7 @@ func NewTicketmasterClient(
 	}
 }
 
+// GetEvents retrieves events from Ticketmaster based on the provided city, country code, and category.
 func (c *TicketmasterClient) GetEvents(
 	city string,
 	countryCode string,
@@ -143,6 +144,7 @@ func (c *TicketmasterClient) GetEvents(
 	return events, nil
 }
 
+// GetEvent retrieves a specific event from Ticketmaster based on the provided event ID.
 func (c *TicketmasterClient) GetEvent(
 	eventID string,
 ) (models.Event, error) {
@@ -185,6 +187,7 @@ func (c *TicketmasterClient) GetEvent(
 	return mapTicketmasterEvent(event, ""), nil
 }
 
+// mapTicketmasterEvent maps a Ticketmaster event to the internal Event model, extracting relevant fields and handling missing data.
 func mapTicketmasterEvent(
 	event ticketmasterEvent,
 	category string,
