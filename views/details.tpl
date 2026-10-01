@@ -4,9 +4,9 @@
   <div class="container">
 
     <div class="details-topbar">
-      <a href="/events" class="back-link">
-        ← Back to events
-      </a>
+      <a href="javascript:history.back()" class="back-link">
+      ← Back to events
+    </a>
     </div>
 
     <section class="event-details">
@@ -131,7 +131,7 @@
           {{ end }}
 
           <a
-            href="/redirect/{{ .Event.ID }}"
+            href="/redirect/{{ .Event.ID }}" target="_blank"
             class="ticket-button"
           >
             Get Tickets
