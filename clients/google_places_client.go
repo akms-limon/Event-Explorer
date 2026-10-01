@@ -12,7 +12,7 @@ import (
 	"Event-Explorer/models"
 )
 
-const googlePlacesBaseURL = "https://places.googleapis.com"
+var googlePlacesBaseURL = "https://places.googleapis.com"
 
 var ErrGooglePlaceNotFound = errors.New("google place not found")
 
