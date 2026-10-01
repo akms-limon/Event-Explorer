@@ -42,10 +42,6 @@
         Discover
       </a>
 
-      <a href="/#how-it-works">
-        How it works
-      </a>
-
       <span class="live-pill">
         Live events
       </span>
