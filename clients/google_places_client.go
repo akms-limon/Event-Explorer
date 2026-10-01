@@ -3,6 +3,7 @@ package clients
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -12,6 +13,8 @@ import (
 )
 
 const googlePlacesBaseURL = "https://places.googleapis.com"
+
+var ErrGooglePlaceNotFound = errors.New("google place not found")
 
 type GooglePlacesClient struct {
 	apiKey     string
@@ -66,7 +69,10 @@ func (c *GooglePlacesClient) Autocomplete(
 
 	body, err := json.Marshal(requestBody)
 	if err != nil {
-		return nil, fmt.Errorf("marshal autocomplete request: %w", err)
+		return nil, fmt.Errorf(
+			"marshal autocomplete request: %w",
+			err,
+		)
 	}
 
 	req, err := http.NewRequest(
@@ -75,7 +81,10 @@ func (c *GooglePlacesClient) Autocomplete(
 		bytes.NewReader(body),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("create autocomplete request: %w", err)
+		return nil, fmt.Errorf(
+			"create autocomplete request: %w",
+			err,
+		)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -83,7 +92,10 @@ func (c *GooglePlacesClient) Autocomplete(
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("autocomplete request failed: %w", err)
+		return nil, fmt.Errorf(
+			"autocomplete request failed: %w",
+			err,
+		)
 	}
 	defer resp.Body.Close()
 
@@ -98,7 +110,10 @@ func (c *GooglePlacesClient) Autocomplete(
 	var result autocompleteResponse
 
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decode autocomplete response: %w", err)
+		return nil, fmt.Errorf(
+			"decode autocomplete response: %w",
+			err,
+		)
 	}
 
 	suggestions := make(
@@ -125,6 +140,7 @@ func (c *GooglePlacesClient) GetPlaceDetails(
 	sessionToken string,
 ) (*models.Location, error) {
 	query := url.Values{}
+
 	query.Set("sessionToken", sessionToken)
 	query.Set("languageCode", "en")
 
@@ -141,17 +157,30 @@ func (c *GooglePlacesClient) GetPlaceDetails(
 		nil,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("create place details request: %w", err)
+		return nil, fmt.Errorf(
+			"create place details request: %w",
+			err,
+		)
 	}
 
 	req.Header.Set("X-Goog-Api-Key", c.apiKey)
-	req.Header.Set("X-Goog-FieldMask", "addressComponents")
+	req.Header.Set(
+		"X-Goog-FieldMask",
+		"addressComponents",
+	)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("place details request failed: %w", err)
+		return nil, fmt.Errorf(
+			"place details request failed: %w",
+			err,
+		)
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, ErrGooglePlaceNotFound
+	}
 
 	if resp.StatusCode < http.StatusOK ||
 		resp.StatusCode >= http.StatusMultipleChoices {
@@ -164,7 +193,10 @@ func (c *GooglePlacesClient) GetPlaceDetails(
 	var result placeDetailsResponse
 
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("decode place details response: %w", err)
+		return nil, fmt.Errorf(
+			"decode place details response: %w",
+			err,
+		)
 	}
 
 	location := &models.Location{}
@@ -174,6 +206,7 @@ func (c *GooglePlacesClient) GetPlaceDetails(
 			switch componentType {
 			case "locality":
 				location.City = component.LongText
+
 			case "country":
 				location.CountryCode = component.ShortText
 			}

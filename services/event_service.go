@@ -3,7 +3,6 @@ package services
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/url"
 	"strings"
 	"sync"
@@ -13,10 +12,11 @@ import (
 )
 
 var (
-	ErrInvalidEventID   = errors.New("invalid event ID")
-	ErrEventNotFound    = errors.New("event not found")
-	ErrTicketURLMissing = errors.New("ticket URL is missing")
-	ErrUnsafeTicketURL  = errors.New("ticket URL is not allowed")
+	ErrInvalidEventID          = errors.New("invalid event ID")
+	ErrEventNotFound           = errors.New("event not found")
+	ErrTicketURLMissing        = errors.New("ticket URL is missing")
+	ErrUnsafeTicketURL         = errors.New("ticket URL is not allowed")
+	ErrInvalidEventSearchInput = errors.New("invalid event search input")
 )
 
 type TicketmasterClient interface {
@@ -26,14 +26,7 @@ type TicketmasterClient interface {
 		category string,
 	) ([]models.Event, error)
 
-	GetEvent(
-		eventID string,
-	) (models.Event, error)
-}
-
-type CacheLocation struct {
-	City        string `json:"city"`
-	CountryCode string `json:"countryCode"`
+	GetEvent(eventID string) (models.Event, error)
 }
 
 type EventService struct {
@@ -43,6 +36,19 @@ type EventService struct {
 	cache      map[string][]models.Event
 }
 
+type eventResult struct {
+	category  string
+	events    []models.Event
+	cacheHit  bool
+	err       error
+}
+
+type CacheLocation struct {
+	City        string `json:"city"`
+	CountryCode string `json:"countryCode"`
+	Category    string `json:"category"`
+}
+
 func NewEventService(
 	ticketmasterClient TicketmasterClient,
 ) *EventService {
@@ -50,13 +56,6 @@ func NewEventService(
 		ticketmasterClient: ticketmasterClient,
 		cache:              make(map[string][]models.Event),
 	}
-}
-
-type eventResult struct {
-	category string
-	events   []models.Event
-	cacheHit bool
-	err      error
 }
 
 func (s *EventService) GetEvents(
@@ -73,19 +72,27 @@ func (s *EventService) GetEvents(
 	countryCode = strings.ToUpper(strings.TrimSpace(countryCode))
 
 	if city == "" {
-		return nil, nil, false, false, fmt.Errorf("city is required")
+		return nil, nil, false, false,
+			fmt.Errorf(
+				"%w: city is required",
+				ErrInvalidEventSearchInput,
+			)
 	}
 
 	if len(city) > 80 {
-		return nil, nil, false, false, fmt.Errorf(
-			"city must not exceed 80 characters",
-		)
+		return nil, nil, false, false,
+			fmt.Errorf(
+				"%w: city must not exceed 80 characters",
+				ErrInvalidEventSearchInput,
+			)
 	}
 
-	if len(countryCode) != 2 {
-		return nil, nil, false, false, fmt.Errorf(
-			"country code must contain 2 letters",
-		)
+	if !isValidCountryCode(countryCode) {
+		return nil, nil, false, false,
+			fmt.Errorf(
+				"%w: country code must contain 2 letters",
+				ErrInvalidEventSearchInput,
+			)
 	}
 
 	results := make(chan eventResult, 2)
@@ -120,8 +127,8 @@ func (s *EventService) GetEvents(
 		}
 	}()
 
-	var music []models.Event
-	var sports []models.Event
+	var musicEvents []models.Event
+	var sportsEvents []models.Event
 
 	var musicCacheHit bool
 	var sportsCacheHit bool
@@ -132,49 +139,29 @@ func (s *EventService) GetEvents(
 	for i := 0; i < 2; i++ {
 		result := <-results
 
-		if result.category == "Music" {
-			music = result.events
+		switch result.category {
+		case "Music":
+			musicEvents = result.events
 			musicCacheHit = result.cacheHit
 			musicErr = result.err
-		} else {
-			sports = result.events
+
+		case "Sports":
+			sportsEvents = result.events
 			sportsCacheHit = result.cacheHit
 			sportsErr = result.err
 		}
 	}
 
 	if musicErr != nil && sportsErr != nil {
-		return nil, nil, false, false, fmt.Errorf(
-			"failed to fetch events",
-		)
+		return nil, nil, false, false,
+			fmt.Errorf(
+				"failed to fetch music and sports events: music: %v; sports: %v",
+				musicErr,
+				sportsErr,
+			)
 	}
 
-	return music, sports, musicCacheHit, sportsCacheHit, nil
-}
-
-func (s *EventService) GetEvent(
-	eventID string,
-) (models.Event, error) {
-	eventID = strings.TrimSpace(eventID)
-
-	if eventID == "" {
-		return models.Event{}, ErrInvalidEventID
-	}
-
-	event, err := s.ticketmasterClient.GetEvent(eventID)
-	if err != nil {
-		if errors.Is(err, clients.ErrTicketmasterEventNotFound) {
-			return models.Event{}, ErrEventNotFound
-		}
-
-		return models.Event{}, err
-	}
-
-	if event.ID == "" {
-		return models.Event{}, ErrEventNotFound
-	}
-
-	return event, nil
+	return musicEvents, sportsEvents, musicCacheHit, sportsCacheHit, nil
 }
 
 func (s *EventService) getCategoryEvents(
@@ -186,13 +173,13 @@ func (s *EventService) getCategoryEvents(
 
 	s.cacheMutex.RLock()
 
-	cachedEvents, found := s.cache[key]
+	cachedEvents, exists := s.cache[key]
 
 	s.cacheMutex.RUnlock()
 
-	if found {
-		log.Printf(
-			"cache hit: city=%s country=%s category=%s",
+	if exists {
+		fmt.Printf(
+			"cache hit: city=%s country=%s category=%s\n",
 			city,
 			countryCode,
 			category,
@@ -206,6 +193,7 @@ func (s *EventService) getCategoryEvents(
 		countryCode,
 		category,
 	)
+
 	if err != nil {
 		return nil, false, err
 	}
@@ -219,6 +207,58 @@ func (s *EventService) getCategoryEvents(
 	return events, false, nil
 }
 
+func (s *EventService) GetEvent(
+	eventID string,
+) (models.Event, error) {
+	eventID = strings.TrimSpace(eventID)
+
+	if eventID == "" {
+		return models.Event{},
+			ErrInvalidEventID
+	}
+
+	event, err := s.ticketmasterClient.GetEvent(eventID)
+
+	if err != nil {
+		if errors.Is(err, clients.ErrTicketmasterEventNotFound) {
+			return models.Event{}, ErrEventNotFound
+		}
+
+		return models.Event{}, err
+	}
+
+	return event, nil
+}
+
+func (s *EventService) GetTicketURL(
+	eventID string,
+) (string, error) {
+	event, err := s.GetEvent(eventID)
+
+	if err != nil {
+		return "", err
+	}
+
+	if strings.TrimSpace(event.TicketURL) == "" {
+		return "", ErrTicketURLMissing
+	}
+
+	parsedURL, err := url.Parse(event.TicketURL)
+	if err != nil {
+		return "", ErrUnsafeTicketURL
+	}
+
+	if parsedURL.Scheme != "https" {
+		return "", ErrUnsafeTicketURL
+	}
+
+	if parsedURL.Hostname() != "www.ticketmaster.ca" {
+		return "", ErrUnsafeTicketURL
+	}
+
+	return parsedURL.String(), nil
+}
+
 func (s *EventService) GetCachedLocations(
 	search string,
 ) []CacheLocation {
@@ -227,7 +267,9 @@ func (s *EventService) GetCachedLocations(
 	s.cacheMutex.RLock()
 	defer s.cacheMutex.RUnlock()
 
-	locations := make(map[string]CacheLocation)
+	locations := make([]CacheLocation, 0)
+
+	seen := make(map[string]bool)
 
 	for key := range s.cache {
 		parts := strings.Split(key, "|")
@@ -237,7 +279,8 @@ func (s *EventService) GetCachedLocations(
 		}
 
 		city := parts[0]
-		countryCode := strings.ToUpper(parts[1])
+		countryCode := parts[1]
+		category := parts[2]
 
 		if search != "" &&
 			!strings.Contains(
@@ -249,29 +292,30 @@ func (s *EventService) GetCachedLocations(
 
 		locationKey := city + "|" + countryCode
 
-		locations[locationKey] = CacheLocation{
-			City:        city,
-			CountryCode: countryCode,
+		if seen[locationKey] {
+			continue
 		}
+
+		seen[locationKey] = true
+
+		locations = append(
+			locations,
+			CacheLocation{
+				City:        city,
+				CountryCode: countryCode,
+				Category:    category,
+			},
+		)
 	}
 
-	result := make([]CacheLocation, 0, len(locations))
-
-	for _, location := range locations {
-		result = append(result, location)
-	}
-
-	return result
+	return locations
 }
 
 func (s *EventService) InvalidateCache() {
 	s.cacheMutex.Lock()
+	defer s.cacheMutex.Unlock()
 
 	s.cache = make(map[string][]models.Event)
-
-	s.cacheMutex.Unlock()
-
-	log.Println("all event cache cleared")
 }
 
 func (s *EventService) InvalidateCacheByLocation(
@@ -279,24 +323,12 @@ func (s *EventService) InvalidateCacheByLocation(
 	countryCode string,
 	category string,
 ) {
-	key := cacheKey(
-		city,
-		countryCode,
-		category,
-	)
+	key := cacheKey(city, countryCode, category)
 
 	s.cacheMutex.Lock()
+	defer s.cacheMutex.Unlock()
 
 	delete(s.cache, key)
-
-	s.cacheMutex.Unlock()
-
-	log.Printf(
-		"cache cleared: city=%s country=%s category=%s",
-		city,
-		countryCode,
-		category,
-	)
 }
 
 func cacheKey(
@@ -313,36 +345,17 @@ func cacheKey(
 	)
 }
 
-func NewEventServiceWithClient(
-	ticketmasterClient *clients.TicketmasterClient,
-) *EventService {
-	return NewEventService(ticketmasterClient)
+func isValidCountryCode(value string) bool {
+	if len(value) != 2 {
+		return false
+	}
+
+	return value[0] >= 'A' && value[0] <= 'Z' &&
+		value[1] >= 'A' && value[1] <= 'Z'
 }
 
-func (s *EventService) GetTicketURL(
-	eventID string,
-) (string, error) {
-	event, err := s.GetEvent(eventID)
-	if err != nil {
-		return "", err
-	}
-
-	if strings.TrimSpace(event.TicketURL) == "" {
-		return "", ErrTicketURLMissing
-	}
-
-	ticketURL, err := url.Parse(event.TicketURL)
-	if err != nil {
-		return "", ErrUnsafeTicketURL
-	}
-
-	if ticketURL.Scheme != "https" {
-		return "", ErrUnsafeTicketURL
-	}
-
-	if ticketURL.Host != "www.ticketmaster.ca" {
-		return "", ErrUnsafeTicketURL
-	}
-
-	return ticketURL.String(), nil
+func NewEventServiceWithClient(
+	ticketmasterClient TicketmasterClient,
+) *EventService {
+	return NewEventService(ticketmasterClient)
 }

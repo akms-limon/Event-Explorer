@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"unicode/utf8"
@@ -8,6 +9,8 @@ import (
 	"Event-Explorer/clients"
 	"Event-Explorer/models"
 )
+
+var ErrLocationNotFound = errors.New("location not found")
 
 type LocationService struct {
 	googlePlacesClient *clients.GooglePlacesClient
@@ -32,15 +35,21 @@ func (s *LocationService) Autocomplete(
 	}
 
 	if utf8.RuneCountInString(input) < 3 {
-		return nil, fmt.Errorf("input must contain at least 3 characters")
+		return nil, fmt.Errorf(
+			"input must contain at least 3 characters",
+		)
 	}
 
 	if len([]byte(input)) > 200 {
-		return nil, fmt.Errorf("input must not exceed 200 bytes")
+		return nil, fmt.Errorf(
+			"input must not exceed 200 bytes",
+		)
 	}
 
 	if sessionToken == "" {
-		return nil, fmt.Errorf("session token is required")
+		return nil, fmt.Errorf(
+			"session token is required",
+		)
 	}
 
 	return s.googlePlacesClient.Autocomplete(
@@ -56,15 +65,32 @@ func (s *LocationService) GetPlaceDetails(
 	placeID = strings.TrimSpace(placeID)
 
 	if placeID == "" {
-		return nil, fmt.Errorf("place ID is required")
+		return nil, fmt.Errorf(
+			"place ID is required",
+		)
 	}
 
 	if sessionToken == "" {
-		return nil, fmt.Errorf("session token is required")
+		return nil, fmt.Errorf(
+			"session token is required",
+		)
 	}
 
-	return s.googlePlacesClient.GetPlaceDetails(
+	location, err := s.googlePlacesClient.GetPlaceDetails(
 		placeID,
 		sessionToken,
 	)
+
+	if err != nil {
+		if errors.Is(
+			err,
+			clients.ErrGooglePlaceNotFound,
+		) {
+			return nil, ErrLocationNotFound
+		}
+
+		return nil, err
+	}
+
+	return location, nil
 }

@@ -1,7 +1,9 @@
 package controllers
 
 import (
+	"errors"
 	"net/http"
+	"strings"
 
 	"Event-Explorer/services"
 
@@ -29,8 +31,12 @@ func (c *LocationController) Autocomplete() {
 		input,
 		sessionToken,
 	)
+
 	if err != nil {
-		c.CustomAbort(http.StatusBadRequest, err.Error())
+		c.CustomAbort(
+			http.StatusBadRequest,
+			err.Error(),
+		)
 		return
 	}
 
@@ -49,12 +55,35 @@ func (c *LocationController) GetPlaceDetails() {
 		placeID,
 		sessionToken,
 	)
+
 	if err != nil {
-		c.CustomAbort(http.StatusBadRequest, err.Error())
+		if errors.Is(
+			err,
+			services.ErrLocationNotFound,
+		) {
+			c.CustomAbort(
+				http.StatusNotFound,
+				err.Error(),
+			)
+			return
+		}
+
+		if strings.TrimSpace(placeID) == "" ||
+			sessionToken == "" {
+			c.CustomAbort(
+				http.StatusBadRequest,
+				err.Error(),
+			)
+			return
+		}
+
+		c.CustomAbort(
+			http.StatusBadGateway,
+			err.Error(),
+		)
 		return
 	}
 
 	c.Data["json"] = location
-
 	c.ServeJSON()
 }

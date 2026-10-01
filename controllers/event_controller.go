@@ -37,6 +37,17 @@ func (c *EventController) List() {
 	)
 
 	if err != nil {
+		if errors.Is(
+			err,
+			services.ErrInvalidEventSearchInput,
+		) {
+			c.CustomAbort(
+				http.StatusBadRequest,
+				err.Error(),
+			)
+			return
+		}
+
 		c.CustomAbort(
 			http.StatusBadGateway,
 			err.Error(),
@@ -60,8 +71,12 @@ func (c *EventController) Details() {
 	eventID := c.Ctx.Input.Param(":eventId")
 
 	event, err := c.EventService.GetEvent(eventID)
+
 	if err != nil {
-		if errors.Is(err, services.ErrInvalidEventID) {
+		if errors.Is(
+			err,
+			services.ErrInvalidEventID,
+		) {
 			c.CustomAbort(
 				http.StatusBadRequest,
 				err.Error(),
@@ -69,7 +84,10 @@ func (c *EventController) Details() {
 			return
 		}
 
-		if errors.Is(err, services.ErrEventNotFound) {
+		if errors.Is(
+			err,
+			services.ErrEventNotFound,
+		) {
 			c.CustomAbort(
 				http.StatusNotFound,
 				err.Error(),
@@ -92,8 +110,12 @@ func (c *EventController) Redirect() {
 	eventID := c.Ctx.Input.Param(":eventId")
 
 	ticketURL, err := c.EventService.GetTicketURL(eventID)
+
 	if err != nil {
-		if errors.Is(err, services.ErrInvalidEventID) {
+		if errors.Is(
+			err,
+			services.ErrInvalidEventID,
+		) {
 			c.CustomAbort(
 				http.StatusBadRequest,
 				err.Error(),
@@ -101,7 +123,10 @@ func (c *EventController) Redirect() {
 			return
 		}
 
-		if errors.Is(err, services.ErrEventNotFound) {
+		if errors.Is(
+			err,
+			services.ErrEventNotFound,
+		) {
 			c.CustomAbort(
 				http.StatusNotFound,
 				err.Error(),
@@ -109,8 +134,21 @@ func (c *EventController) Redirect() {
 			return
 		}
 
-		if errors.Is(err, services.ErrTicketURLMissing) ||
-			errors.Is(err, services.ErrUnsafeTicketURL) {
+		if errors.Is(
+			err,
+			services.ErrTicketURLMissing,
+		) {
+			c.CustomAbort(
+				http.StatusBadRequest,
+				err.Error(),
+			)
+			return
+		}
+
+		if errors.Is(
+			err,
+			services.ErrUnsafeTicketURL,
+		) {
 			c.CustomAbort(
 				http.StatusBadRequest,
 				err.Error(),
@@ -132,9 +170,9 @@ func (c *EventController) Redirect() {
 }
 
 func (c *EventController) SearchCachedCities() {
-	search := c.GetString("search")
-
-	search = strings.TrimSpace(search)
+	search := strings.TrimSpace(
+		c.GetString("search"),
+	)
 
 	if len([]byte(search)) < 3 {
 		c.Data["json"] = map[string]interface{}{
@@ -157,7 +195,7 @@ func (c *EventController) SearchCachedCities() {
 func (c *EventController) InvalidateCache() {
 	c.EventService.InvalidateCache()
 
-	c.Data["json"] = map[string]string{
+	c.Data["json"] = map[string]interface{}{
 		"message": "all event cache cleared",
 	}
 
@@ -175,7 +213,7 @@ func (c *EventController) InvalidateCacheByLocation() {
 		category,
 	)
 
-	c.Data["json"] = map[string]string{
+	c.Data["json"] = map[string]interface{}{
 		"message": "event cache cleared",
 	}
 
