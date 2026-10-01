@@ -37,6 +37,12 @@ func Register(
 	)
 
 	beego.Router(
+		"/api/cache/locations",
+		eventController,
+		"get:SearchCachedCities",
+	)
+
+	beego.Router(
 		"/events",
 		eventController,
 		"get:List",

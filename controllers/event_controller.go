@@ -3,6 +3,7 @@ package controllers
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"Event-Explorer/services"
 
@@ -36,14 +37,19 @@ func (c *EventController) List() {
 	)
 
 	if err != nil {
-		c.CustomAbort(http.StatusBadGateway, err.Error())
+		c.CustomAbort(
+			http.StatusBadGateway,
+			err.Error(),
+		)
 		return
 	}
 
 	c.Data["City"] = city
 	c.Data["CountryCode"] = countryCode
+
 	c.Data["MusicEvents"] = musicEvents
 	c.Data["SportsEvents"] = sportsEvents
+
 	c.Data["MusicCacheHit"] = musicCacheHit
 	c.Data["SportsCacheHit"] = sportsCacheHit
 
@@ -123,6 +129,29 @@ func (c *EventController) Redirect() {
 		ticketURL,
 		http.StatusFound,
 	)
+}
+
+func (c *EventController) SearchCachedCities() {
+	search := c.GetString("search")
+
+	search = strings.TrimSpace(search)
+
+	if len([]byte(search)) < 3 {
+		c.Data["json"] = map[string]interface{}{
+			"locations": []services.CacheLocation{},
+		}
+
+		c.ServeJSON()
+		return
+	}
+
+	locations := c.EventService.GetCachedLocations(search)
+
+	c.Data["json"] = map[string]interface{}{
+		"locations": locations,
+	}
+
+	c.ServeJSON()
 }
 
 func (c *EventController) InvalidateCache() {

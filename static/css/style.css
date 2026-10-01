@@ -934,7 +934,6 @@ h1 em {
     padding: 20px;
   }
 }
-
 /* =========================
    Cache Tools
 ========================= */
@@ -942,47 +941,148 @@ h1 em {
 .cache-tools {
   margin-top: 28px;
   display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 24px;
 }
+
+.cache-full-row,
+.cache-category-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.cache-full-row h3,
+.cache-category-row h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.cache-category-row {
+  align-items: flex-start;
+}
+
+.cache-category-row h3 {
+  padding-top: 19px;
+}
+
+
+/* =========================
+   Cache Buttons
+========================= */
 
 .cache-button {
   min-height: 38px;
-  padding: 0 14px;
-  border: 1px solid var(--green);
+  padding: 0 15px;
   border-radius: 7px;
-  background: var(--green);
-  color: #ffffff;
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
 }
 
-.cache-button:hover {
-  background: #08704f;
+.cache-button-primary {
+  background: var(--green);
+  color: #ffffff;
+  border: 1px solid var(--green);
+}
+
+.cache-button-primary:hover {
+  background: #085845;
+  border-color: #085845;
+  transform: translateY(-1px);
+}
+
+.cache-button-secondary {
+  height: 38px;
+  margin-top: 19px;
+  background: #e5ee9f;
+  color: var(--text);
+  border: 1px solid #d3dc86;
+}
+
+.cache-button-secondary:hover {
+  background: #dce68b;
+  border-color: #cbd675;
+  transform: translateY(-1px);
 }
 
 .cache-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
+
+
+/* =========================
+   Cache Search / Selects
+========================= */
 
 .cache-location-control {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 10px;
 }
 
+.cache-city-field,
+.cache-select-field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.cache-city-field {
+  width: 225px;
+}
+
+.cache-select-field {
+  width: 125px;
+}
+
+.cache-city-field label,
+.cache-select-field label {
+  height: 12px;
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 12px;
+}
+
+.cache-city-input,
 .cache-select {
+  box-sizing: border-box;
+  width: 100%;
   height: 38px;
-  min-width: 110px;
-  padding: 0 10px;
+  padding: 0 11px;
   border: 1px solid var(--field-line);
   border-radius: 7px;
   background: var(--panel);
   color: var(--text);
   font-size: 11px;
+}
+
+.cache-city-input {
+  outline: none;
+}
+
+.cache-city-input::placeholder {
+  color: var(--placeholder);
+}
+
+.cache-city-input:focus {
+  border-color: var(--green);
+  box-shadow:
+    0 0 0 3px rgba(10, 107, 87, 0.08);
+}
+
+.cache-select {
   cursor: pointer;
 }
 
@@ -991,11 +1091,91 @@ h1 em {
   border-color: var(--green);
 }
 
-.cache-message {
+.cache-select:disabled {
+  background: var(--soft);
+  color: var(--placeholder);
+  cursor: not-allowed;
+}
+
+
+/* =========================
+   City Suggestions
+========================= */
+
+.cache-city-suggestions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 65px;
+  z-index: 30;
+
+  max-height: 220px;
+  margin: 0;
+  padding: 0;
+
+  overflow-y: auto;
+
+  list-style: none;
+
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+
+  box-shadow:
+    0 10px 25px rgba(22, 41, 43, 0.1);
+}
+
+.cache-city-suggestions:empty {
+  display: none;
+}
+
+.cache-city-suggestion {
   width: 100%;
-  min-height: 18px;
-  color: var(--muted);
+  padding: 12px 13px;
+
+  border: 0;
+  border-bottom: 1px solid var(--line);
+
+  background: transparent;
+  color: var(--text);
+
+  text-align: left;
   font-size: 11px;
+
+  cursor: pointer;
+}
+
+.cache-city-suggestion:last-child {
+  border-bottom: 0;
+}
+
+.cache-city-suggestion:hover {
+  background: var(--hover);
+}
+
+
+/* =========================
+   Cache Messages
+========================= */
+
+.cache-message {
+  position: absolute;
+  top: 72px;
+  left: 0;
+
+  min-height: 17px;
+
+  color: var(--muted);
+  font-size: 10px;
+
+  white-space: nowrap;
+}
+
+.cache-action-message {
+  min-height: 18px;
+
+  color: var(--muted);
+  font-size: 10px;
 }
 
 
@@ -1013,11 +1193,15 @@ h1 em {
 .cache-status {
   display: inline-flex;
   align-items: center;
+
   min-height: 28px;
   padding: 0 11px;
+
   border-radius: 999px;
+
   font-size: 10px;
   font-weight: 700;
+
   white-space: nowrap;
 }
 
@@ -1035,20 +1219,42 @@ h1 em {
 
 
 /* =========================
-   Cache Tools Responsive
+   Responsive
 ========================= */
 
+@media (max-width: 900px) {
+  .cache-category-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cache-category-row h3 {
+    padding-top: 0;
+  }
+
+  .cache-location-control {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}
+
 @media (max-width: 700px) {
-  .cache-tools {
+  .cache-full-row {
+    flex-wrap: wrap;
+  }
+
+  .cache-location-control {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .cache-location-control {
-    flex-wrap: wrap;
+  .cache-city-field,
+  .cache-select-field {
+    width: 100%;
   }
 
-  .cache-select {
-    flex: 1;
+  .cache-button-secondary {
+    width: 100%;
+    margin-top: 0;
   }
 }

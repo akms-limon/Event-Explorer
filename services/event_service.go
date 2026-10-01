@@ -31,6 +31,11 @@ type TicketmasterClient interface {
 	) (models.Event, error)
 }
 
+type CacheLocation struct {
+	City        string `json:"city"`
+	CountryCode string `json:"countryCode"`
+}
+
 type EventService struct {
 	ticketmasterClient TicketmasterClient
 
@@ -54,7 +59,6 @@ type eventResult struct {
 	err      error
 }
 
-// GetEvents retrieves Music and Sports events concurrently.
 func (s *EventService) GetEvents(
 	city string,
 	countryCode string,
@@ -148,7 +152,6 @@ func (s *EventService) GetEvents(
 	return music, sports, musicCacheHit, sportsCacheHit, nil
 }
 
-// GetEvent retrieves a single event by its ID.
 func (s *EventService) GetEvent(
 	eventID string,
 ) (models.Event, error) {
@@ -182,7 +185,9 @@ func (s *EventService) getCategoryEvents(
 	key := cacheKey(city, countryCode, category)
 
 	s.cacheMutex.RLock()
+
 	cachedEvents, found := s.cache[key]
+
 	s.cacheMutex.RUnlock()
 
 	if found {
@@ -206,16 +211,67 @@ func (s *EventService) getCategoryEvents(
 	}
 
 	s.cacheMutex.Lock()
+
 	s.cache[key] = events
+
 	s.cacheMutex.Unlock()
 
 	return events, false, nil
 }
 
+func (s *EventService) GetCachedLocations(
+	search string,
+) []CacheLocation {
+	search = strings.ToLower(strings.TrimSpace(search))
+
+	s.cacheMutex.RLock()
+	defer s.cacheMutex.RUnlock()
+
+	locations := make(map[string]CacheLocation)
+
+	for key := range s.cache {
+		parts := strings.Split(key, "|")
+
+		if len(parts) != 3 {
+			continue
+		}
+
+		city := parts[0]
+		countryCode := strings.ToUpper(parts[1])
+
+		if search != "" &&
+			!strings.Contains(
+				strings.ToLower(city),
+				search,
+			) {
+			continue
+		}
+
+		locationKey := city + "|" + countryCode
+
+		locations[locationKey] = CacheLocation{
+			City:        city,
+			CountryCode: countryCode,
+		}
+	}
+
+	result := make([]CacheLocation, 0, len(locations))
+
+	for _, location := range locations {
+		result = append(result, location)
+	}
+
+	return result
+}
+
 func (s *EventService) InvalidateCache() {
 	s.cacheMutex.Lock()
+
 	s.cache = make(map[string][]models.Event)
+
 	s.cacheMutex.Unlock()
+
+	log.Println("all event cache cleared")
 }
 
 func (s *EventService) InvalidateCacheByLocation(
@@ -230,8 +286,17 @@ func (s *EventService) InvalidateCacheByLocation(
 	)
 
 	s.cacheMutex.Lock()
+
 	delete(s.cache, key)
+
 	s.cacheMutex.Unlock()
+
+	log.Printf(
+		"cache cleared: city=%s country=%s category=%s",
+		city,
+		countryCode,
+		category,
+	)
 }
 
 func cacheKey(
@@ -242,7 +307,7 @@ func cacheKey(
 	return strings.ToLower(
 		strings.TrimSpace(city) +
 			"|" +
-			strings.ToUpper(strings.TrimSpace(countryCode)) +
+			strings.TrimSpace(countryCode) +
 			"|" +
 			strings.TrimSpace(category),
 	)
