@@ -1,12 +1,21 @@
 package services
 
 import (
+	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"sync"
 
 	"Event-Explorer/clients"
 	"Event-Explorer/models"
+)
+
+var (
+	ErrInvalidEventID   = errors.New("invalid event ID")
+	ErrEventNotFound    = errors.New("event not found")
+	ErrTicketURLMissing = errors.New("ticket URL is missing")
+	ErrUnsafeTicketURL  = errors.New("ticket URL is not allowed")
 )
 
 type TicketmasterClient interface {
@@ -15,6 +24,10 @@ type TicketmasterClient interface {
 		countryCode string,
 		category string,
 	) ([]models.Event, error)
+
+	GetEvent(
+		eventID string,
+	) (models.Event, error)
 }
 
 type EventService struct {
@@ -33,6 +46,7 @@ func NewEventService(
 	}
 }
 
+// GetEvents retrieves events for the specified city and country code, categorized into Music and Sports.
 func (s *EventService) GetEvents(
 	city string,
 	countryCode string,
@@ -109,6 +123,31 @@ func (s *EventService) GetEvents(
 	return music, sports, nil
 }
 
+// GetEvent retrieves a single event by its ID.
+func (s *EventService) GetEvent(eventID string) (models.Event, error) {
+	eventID = strings.TrimSpace(eventID)
+
+	if eventID == "" {
+		return models.Event{}, ErrInvalidEventID
+	}
+
+	event, err := s.ticketmasterClient.GetEvent(eventID)
+	if err != nil {
+		if errors.Is(err, clients.ErrTicketmasterEventNotFound) {
+			return models.Event{}, ErrEventNotFound
+		}
+
+		return models.Event{}, err
+	}
+
+	if event.ID == "" {
+		return models.Event{}, ErrEventNotFound
+	}
+
+	return event, nil
+}
+
+// getCategoryEvents retrieves events for a specific category (Music or Sports) and caches the results.
 func (s *EventService) getCategoryEvents(
 	city string,
 	countryCode string,
@@ -154,4 +193,30 @@ func NewEventServiceWithClient(
 	ticketmasterClient *clients.TicketmasterClient,
 ) *EventService {
 	return NewEventService(ticketmasterClient)
+}
+
+func (s *EventService) GetTicketURL(eventID string) (string, error) {
+	event, err := s.GetEvent(eventID)
+	if err != nil {
+		return "", err
+	}
+
+	if strings.TrimSpace(event.TicketURL) == "" {
+		return "", ErrTicketURLMissing
+	}
+
+	ticketURL, err := url.Parse(event.TicketURL)
+	if err != nil {
+		return "", ErrUnsafeTicketURL
+	}
+
+	if ticketURL.Scheme != "https" {
+		return "", ErrUnsafeTicketURL
+	}
+
+	if ticketURL.Host != "www.ticketmaster.ca" {
+		return "", ErrUnsafeTicketURL
+	}
+
+	return ticketURL.String(), nil
 }
