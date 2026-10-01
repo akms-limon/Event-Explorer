@@ -53,4 +53,16 @@ func Register(
 		eventController,
 		"get:Redirect",
 	)
+
+	beego.Router(
+		"/cache/invalidate",
+		eventController,
+		"post:InvalidateCache",
+	)
+
+	beego.Router(
+		"/cache/invalidate/:city/:country/:category",
+		eventController,
+		"post:InvalidateCacheByLocation",
+	)
 }

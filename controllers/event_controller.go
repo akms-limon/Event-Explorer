@@ -26,7 +26,11 @@ func (c *EventController) List() {
 	city := c.GetString("city")
 	countryCode := c.GetString("countryCode")
 
-	musicEvents, sportsEvents, err := c.EventService.GetEvents(
+	musicEvents,
+		sportsEvents,
+		musicCacheHit,
+		sportsCacheHit,
+		err := c.EventService.GetEvents(
 		city,
 		countryCode,
 	)
@@ -40,6 +44,9 @@ func (c *EventController) List() {
 	c.Data["CountryCode"] = countryCode
 	c.Data["MusicEvents"] = musicEvents
 	c.Data["SportsEvents"] = sportsEvents
+	c.Data["MusicCacheHit"] = musicCacheHit
+	c.Data["SportsCacheHit"] = sportsCacheHit
+
 	c.TplName = "listing.tpl"
 }
 
@@ -49,16 +56,25 @@ func (c *EventController) Details() {
 	event, err := c.EventService.GetEvent(eventID)
 	if err != nil {
 		if errors.Is(err, services.ErrInvalidEventID) {
-			c.CustomAbort(http.StatusBadRequest, err.Error())
+			c.CustomAbort(
+				http.StatusBadRequest,
+				err.Error(),
+			)
 			return
 		}
 
 		if errors.Is(err, services.ErrEventNotFound) {
-			c.CustomAbort(http.StatusNotFound, err.Error())
+			c.CustomAbort(
+				http.StatusNotFound,
+				err.Error(),
+			)
 			return
 		}
 
-		c.CustomAbort(http.StatusBadGateway, err.Error())
+		c.CustomAbort(
+			http.StatusBadGateway,
+			err.Error(),
+		)
 		return
 	}
 
@@ -72,22 +88,34 @@ func (c *EventController) Redirect() {
 	ticketURL, err := c.EventService.GetTicketURL(eventID)
 	if err != nil {
 		if errors.Is(err, services.ErrInvalidEventID) {
-			c.CustomAbort(http.StatusBadRequest, err.Error())
+			c.CustomAbort(
+				http.StatusBadRequest,
+				err.Error(),
+			)
 			return
 		}
 
 		if errors.Is(err, services.ErrEventNotFound) {
-			c.CustomAbort(http.StatusNotFound, err.Error())
+			c.CustomAbort(
+				http.StatusNotFound,
+				err.Error(),
+			)
 			return
 		}
 
 		if errors.Is(err, services.ErrTicketURLMissing) ||
 			errors.Is(err, services.ErrUnsafeTicketURL) {
-			c.CustomAbort(http.StatusBadRequest, err.Error())
+			c.CustomAbort(
+				http.StatusBadRequest,
+				err.Error(),
+			)
 			return
 		}
 
-		c.CustomAbort(http.StatusBadGateway, err.Error())
+		c.CustomAbort(
+			http.StatusBadGateway,
+			err.Error(),
+		)
 		return
 	}
 
@@ -95,4 +123,32 @@ func (c *EventController) Redirect() {
 		ticketURL,
 		http.StatusFound,
 	)
+}
+
+func (c *EventController) InvalidateCache() {
+	c.EventService.InvalidateCache()
+
+	c.Data["json"] = map[string]string{
+		"message": "all event cache cleared",
+	}
+
+	c.ServeJSON()
+}
+
+func (c *EventController) InvalidateCacheByLocation() {
+	city := c.Ctx.Input.Param(":city")
+	countryCode := c.Ctx.Input.Param(":country")
+	category := c.Ctx.Input.Param(":category")
+
+	c.EventService.InvalidateCacheByLocation(
+		city,
+		countryCode,
+		category,
+	)
+
+	c.Data["json"] = map[string]string{
+		"message": "event cache cleared",
+	}
+
+	c.ServeJSON()
 }
