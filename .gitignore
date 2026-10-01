@@ -22,3 +22,5 @@ coverage.html
 .DS_Store
 
 .json*
+
+coverage.out

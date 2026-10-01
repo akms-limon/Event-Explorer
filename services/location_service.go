@@ -12,12 +12,24 @@ import (
 
 var ErrLocationNotFound = errors.New("location not found")
 
+type GooglePlacesClient interface {
+	Autocomplete(
+		input string,
+		sessionToken string,
+	) ([]models.LocationSuggestion, error)
+
+	GetPlaceDetails(
+		placeID string,
+		sessionToken string,
+	) (*models.Location, error)
+}
+
 type LocationService struct {
-	googlePlacesClient *clients.GooglePlacesClient
+	googlePlacesClient GooglePlacesClient
 }
 
 func NewLocationService(
-	googlePlacesClient *clients.GooglePlacesClient,
+	googlePlacesClient GooglePlacesClient,
 ) *LocationService {
 	return &LocationService{
 		googlePlacesClient: googlePlacesClient,
